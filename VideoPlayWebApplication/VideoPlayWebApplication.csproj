@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+	  <!-- 启用单文件发布 -->
+	  <PublishSingleFile>true</PublishSingleFile>
+
+	  <!-- 自包含运行时（可选） -->
+	  <SelfContained>true</SelfContained>
+
+	  <!-- 指定运行时标识（如不指定则生成框架依赖型单文件） -->
+	  <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+
+	  <!-- 排除调试符号文件 -->
+	  <DebugType>none</DebugType>
+	  <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.EventLog" Version="9.0.3" />
+  </ItemGroup>
+
+</Project>

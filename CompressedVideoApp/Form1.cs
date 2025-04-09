@@ -111,6 +111,16 @@ namespace CompressedVideoApp
                 MessageBox.Show("请先选择有效的需要压缩的视频目录！");
                 return;
             }
+            //if (string.IsNullOrEmpty(textBox1.Text))
+            //{
+            //    MessageBox.Show("请输入拍摄人名字");
+            //    return;
+            //}
+            if (string.IsNullOrWhiteSpace(textBox1.Text))
+            {
+                MessageBox.Show("请输入拍摄人名字，拍摄人名字不能只是空格");
+                return;
+            }
             if (!Directory.Exists(_outputDirectory))
             {
                 Directory.CreateDirectory(_outputDirectory);
@@ -142,32 +152,82 @@ namespace CompressedVideoApp
                 progressBar1.Value = 0;
                 progressBar1.Visible = true;
                 _cts = new CancellationTokenSource();
-                SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+                //SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
                 checkBox1.Enabled = false;
                 button1.Enabled = false;
                 button2.Enabled = false;
+                //foreach (var videoFile in videoFiles)
+                //{
+                //    if (_cts.Token.IsCancellationRequested)
+                //    {
+                //        break; // 支持取消操作
+                //    }
+
+                //    await semaphore.WaitAsync(_cts.Token);
+                //    try
+                //    {
+                //        await Task.Run(() => ProcessAsync(videoFile, _cts.Token), _cts.Token);
+                //    }
+                //    catch (OperationCanceledException)
+                //    {
+                //        // 处理取消逻辑
+                //        //if (File.Exists(videoFile)) File.Delete(videoFile);
+                //        break;
+                //    }
+                //    finally
+                //    {
+                //        semaphore.Release();
+                //    }
+                //}
+
+                var processingTasks = new List<Task>();
                 foreach (var videoFile in videoFiles)
                 {
                     if (_cts.Token.IsCancellationRequested)
+                        break; // 支持取消操作，退出循环
+
+                    // 当并发任务数达到2时，等待至少一个任务完成
+                    if (processingTasks.Count >= 2)
                     {
-                        break; // 支持取消操作
+                        var completedTask = await Task.WhenAny(processingTasks);
+                        //processingTasks.Remove(completedTask);
+                        processingTasks.RemoveAll(t => t.IsCompleted);
+
+                        try
+                        {
+                            await completedTask; // 处理已完成任务的异常
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // 处理取消逻辑（例如删除文件）
+                            // if (File.Exists(videoFile)) File.Delete(videoFile);
+                        }
                     }
 
-                    await semaphore.WaitAsync(_cts.Token);
                     try
                     {
-                        await Task.Run(() => ProcessAsync(videoFile, _cts.Token), _cts.Token);
+                        // 启动新任务并加入列表（不阻塞）
+                        var task = ProcessAsync(videoFile, _cts.Token);
+                        processingTasks.Add(task);
                     }
                     catch (OperationCanceledException)
                     {
-                        // 处理取消逻辑
-                        //if (File.Exists(videoFile)) File.Delete(videoFile);
-                        break;
+                        break; // 处理创建任务时的取消请求
                     }
-                    finally
-                    {
-                        semaphore.Release();
-                    }
+                }
+
+                // 等待所有剩余任务完成
+                try
+                {
+                    await Task.WhenAll(processingTasks);
+                }
+                catch (OperationCanceledException)
+                {
+                    // 处理取消逻辑
+                }
+                catch
+                {
+                    // 处理其他异常
                 }
                 _isRun = false;
                 checkBox1.Enabled = true;
@@ -429,7 +489,7 @@ namespace CompressedVideoApp
                 return;
             }
 
-            string compressedFilePath = Path.Combine(_outputDirectory, "compressed_" + Path.GetFileNameWithoutExtension(videoFile) + ".mp4");
+            string compressedFilePath = Path.Combine(_outputDirectory, "compressed_" + textBox1.Text.Trim() + "_" + Path.GetFileNameWithoutExtension(videoFile) + ".mp4");
             if (File.Exists(compressedFilePath))
             {
                 string old = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-fff") + "_" + Path.GetFileName(compressedFilePath);

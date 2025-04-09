@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompressedVideoService", "CompressedVideoService\CompressedVideoService.csproj", "{B3932E96-F966-4EC0-B795-B1F45CA930E7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompressedVideoApp", "CompressedVideoApp\CompressedVideoApp.csproj", "{372260D6-F62A-4467-854F-088630966E5E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoPlayWebApplication", "VideoPlayWebApplication\VideoPlayWebApplication.csproj", "{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,14 @@ Global
 		{372260D6-F62A-4467-854F-088630966E5E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{372260D6-F62A-4467-854F-088630966E5E}.Release|x64.ActiveCfg = Release|Any CPU
 		{372260D6-F62A-4467-854F-088630966E5E}.Release|x64.Build.0 = Release|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Debug|x64.Build.0 = Debug|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Release|x64.ActiveCfg = Release|x64
+		{98B2BEB3-EA78-4AD4-872D-BE91E2E900F7}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

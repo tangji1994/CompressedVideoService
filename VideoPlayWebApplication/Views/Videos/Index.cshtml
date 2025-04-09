@@ -1,0 +1,299 @@
+﻿@* @model IEnumerable<VideoPlayWebApplication.Models.Video> *@
+
+@model VideoPlayWebApplication.Models.VideoListViewModel
+@{
+    ViewData["Title"] = "视频浏览";
+}
+
+<h2 class="text-center">试产验货验厂视频记录查询系统</h2>
+
+<form method="get" class="container">
+    <!-- 第一行 -->
+    <div class="row">
+        <div class="form-group col-md-3">
+            <label>供应商</label>
+            <select name="suppliername" class="form-control"
+            asp-items="@(new SelectList(ViewBag.SupplierNames,ViewBag.SelectedSupplierName))">
+                <option value="">全部供应商</option>
+            </select>
+        </div>
+        <div class="form-group col-md-3">
+            <label>产品型号</label>
+            <select name="productmodelname" class="form-control"
+            asp-items="@(new SelectList(ViewBag.ProductModelNames,ViewBag.SelectedProductModelName))">
+                <option value="">全部型号</option>
+            </select>
+        </div>
+        <div class="form-group col-md-3">
+            <label>视频上传人员</label>
+            <select name="username" class="form-control"
+            asp-items="@(new SelectList(ViewBag.Users,ViewBag.SelectedUser))">
+                <option value="">全部人员</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 第二行 -->
+    <div class="row">
+        <div class="form-group col-md-3">
+            <label class="control-label">开始日期</label>
+            <input type="date" name="startDate" class="form-control"
+            value="@(Context.Request.Query["startDate"].FirstOrDefault() ?? new DateTime(2025, 4, 1).ToString("yyyy-MM-dd"))" />
+        </div>
+        <div class="form-group col-md-3">
+            <label class="control-label">结束日期</label>
+            <input type="date" name="endDate" class="form-control"
+            value="@(Context.Request.Query["endDate"].FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd"))" />
+        </div>
+    </div>
+
+    <!-- 按钮行：添加 mt-4 增加上边距 -->
+    <div class="row mt-4"> <!-- 关键修改：添加 margin-top -->
+        <div class="form-group col-md-9">
+            <button type="submit" class="form-control btn btn-primary btn-block">筛选</button>
+        </div>
+    </div>
+</form>
+
+
+
+@if (Model.Videos.Any()){
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>上传人员</th>
+                <th>拍摄时间</th>
+                <th>文件名</th>
+                <th>供应商</th>
+                <th>型号名</th>
+                @* <th>添加时间</th> *@
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Videos)
+            {
+                <tr>
+                    <td>@item.UserName</td>
+                    <td>@item.RecordedTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>
+                        <!-- 修正后的触发按钮 -->
+                        <button type="button" 
+                        class="btn btn-link" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#videoModal"
+                        @{
+                            // 统一处理路径格式
+                            string baseDir = ViewBag.WatchedFolder;
+                            string fullTargetPath = System.IO.Path.GetFullPath(item.FilePath); // 标准化目标路径
+                            string virtualPath = "";
+                            // 获取相对路径并转换分隔符
+                            string relativePath = System.IO.Path.GetRelativePath(baseDir, fullTargetPath)
+                            .Replace('\\', '/'); // 确保URL使用正斜杠
+
+                            // 检查是否有效相对路径
+                            if (!relativePath.StartsWith("..") && !System.IO.Path.IsPathRooted(relativePath))
+                            {
+                                // 拼接虚拟路径
+                                virtualPath = $"~/videos/{relativePath}";
+                                //data-video-src = Url.Content(virtualPath);
+                            }
+                            else
+                            {
+                                // 处理无效路径（如不同驱动器）
+                                //virtualPath = Url.Content("~/videos/default.mp4");
+                            }
+                        }
+                                    @* data-video-src="@Url.Content($"~/videos/{System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(item.FilePath))}/{item.FileName}")" *@
+                                    data-video-src="@Url.Content(virtualPath)"
+                                >
+                                    @item.FileName
+                                </button>
+                            </td>
+                            <td>@item.SupplierName</td>
+                            <td>@item.ProductModelName</td>
+                            @* <td>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td> *@
+                        </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination d-flex justify-content-center gap-1 my-4">
+        <!-- 上一页 -->
+        @if (Model.HasPreviousPage)
+        {
+                <a class="btn btn-outline-primary rounded-pill px-3" 
+                   asp-action="Index"
+                   asp-route-page="@(Model.CurrentPage - 1)"
+                   asp-route-username="@Model.UserName"
+                   asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                   asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                   asp-route-suppliername="@Model.SupplierName"
+                   asp-route-productmodelname="@Model.ProductModelName">
+                    <i class="bi bi-chevron-left"></i> 上一页
+                </a>
+        }
+
+        <!-- 智能页码计算 -->
+        @{
+            int maxVisiblePages = 11; // 最大显示页码数
+            int halfWindow = 5;       // 当前页两侧显示的页数
+
+            int startPage = Math.Max(1, Model.CurrentPage - halfWindow);
+            int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + halfWindow);
+
+            // 处理开头不足
+            if (Model.CurrentPage <= halfWindow + 1)
+            {
+                endPage = Math.Min(maxVisiblePages, Model.TotalPages);
+            }
+            // 处理结尾不足
+            else if (Model.CurrentPage + halfWindow >= Model.TotalPages)
+            {
+                startPage = Math.Max(1, Model.TotalPages - maxVisiblePages + 1);
+            }
+        }
+
+        <!-- 显示页码 -->
+        @for (int i = startPage; i <= endPage; i++)
+        {
+                <a class="btn @(i == Model.CurrentPage ? "btn-primary" : "btn-outline-primary") rounded-circle px-0" 
+                   style="min-width: 2.5rem;"
+                   asp-action="Index"
+                   asp-route-page="@i"
+                   asp-route-username="@Model.UserName"
+                   asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                   asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                   asp-route-suppliername="@Model.SupplierName"
+                   asp-route-productmodelname="@Model.ProductModelName">
+                @i
+                </a>
+        }
+
+        <!-- 下一页 -->
+        @if (Model.HasNextPage)
+        {
+                <a class="btn btn-outline-primary rounded-pill px-3" 
+                   asp-action="Index"
+                   asp-route-page="@(Model.CurrentPage + 1)"
+                   asp-route-username="@Model.UserName"
+                   asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                   asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                   asp-route-suppliername="@Model.SupplierName"
+                   asp-route-productmodelname="@Model.ProductModelName">
+                    下一页 <i class="bi bi-chevron-right"></i>
+                </a>
+        }
+    </div>
+
+}
+else if (Context.Request.Query.Count > 0)
+{
+        <p>未找到符合条件的视频。</p>
+}
+
+
+
+@* <div class="modal fade" id="videoModal" tabindex="-1"> *@
+@*     <div class="modal-dialog modal-lg"> *@
+@*         <div class="modal-content"> *@
+@*             <div class="modal-body"> *@
+@*                 <video id="modalVideo" controls style="width: 100%"> *@
+@*                     <source id="videoSource" type="video/mp4"> *@
+@*                     您的浏览器不支持视频播放 *@
+@*                 </video> *@
+@*             </div> *@
+@*         </div> *@
+@*     </div> *@
+@* </div> *@
+
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content border-0 bg-dark">
+      <!-- 模态框头部 -->
+      <div class="modal-header border-bottom-0 position-absolute top-0 end-0 z-3">
+        <button type="button" 
+                class="btn-close btn-close-white" 
+                data-bs-dismiss="modal" 
+                aria-label="Close"
+                style="filter: brightness(0) invert(1);"></button>
+      </div>
+
+      <!-- 视频主体 -->
+      <div class="modal-body p-0 ratio ratio-16x9">
+        <!-- 加载动画 -->
+        <div class="video-loading spinner-border text-light" role="status" 
+             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+
+        <!-- 视频播放器 -->
+        <video id="modalVideo" controls class="embed-responsive-item">
+          <source id="videoSource" type="video/mp4">
+          <div class="alert alert-danger m-3">您的浏览器不支持视频播放</div>
+        </video>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* 自定义样式 */
+#videoModal .modal-content {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+#modalVideo {
+  background: #000;
+  border-radius: 8px;
+}
+
+.video-loading {
+  width: 3rem;
+  height: 3rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.video-loading.show {
+  opacity: 1;
+}
+
+/* 自定义视频控件样式 */
+@* #modalVideo::-webkit-media-controls-panel { *@
+@*   background: linear-gradient(transparent, rgba(0,0,0,0.7)); *@
+@* } *@
+
+@* #modalVideo::-webkit-media-controls-play-button, *@
+@* #modalVideo::-webkit-media-controls-mute-button { *@
+@*   background-color: rgba(255,255,255,0.8); *@
+@*   border-radius: 50%; *@
+@* } *@
+</style>
+
+@section Scripts {
+        <!-- 添加必需依赖 -->
+
+        <script>
+            // 更新为 Bootstrap 5 的事件监听方式
+            const videoModal = document.getElementById('videoModal');
+            videoModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const videoSrc = button.dataset.videoSrc;
+
+                // 清空之前的视频源
+                const videoElement = this.querySelector('video');
+                videoElement.innerHTML = `<source src="${videoSrc}" type="video/mp4">`;
+                videoElement.load();
+            });
+
+            videoModal.addEventListener('hidden.bs.modal', function() {
+                const videoElement = this.querySelector('video');
+                videoElement.pause();
+                videoElement.currentTime = 0;  // 重置播放进度
+            });
+        </script>
+}
+
+
